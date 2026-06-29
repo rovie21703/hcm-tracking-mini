@@ -14,10 +14,9 @@ import {
 } from "./firebase/service";
 import {
   computeMetrics, fmtHrs, fmtMins, fmtTime, fmtDate, todayStr,
+  getWeekDates, fmtWeekRange,
 } from "./firebase/compute";
 import type { UserProfile, Punch, Metrics } from "./firebase/types";
-
-const WEEK_DATES = ["2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28"];
 
 // ── Theme hook ──────────────────────────────────────────────────────────────
 function useTheme(): [string, () => void] {
@@ -286,10 +285,12 @@ function TopBar({ title, sub }: { title: string; sub?: string }) {
 }
 
 // ── Week Table ───────────────────────────────────────────────────────────────
-function WeekTable({ userId, schedule, records, title }: {
+function WeekTable({ userId, schedule, records, title, weekDates }: {
   userId: string; schedule: { start: string; end: string }; records: Punch[]; title?: string;
+  weekDates?: string[];
 }) {
-  const rows = WEEK_DATES.map(date => {
+  const dates = weekDates ?? getWeekDates();
+  const rows = dates.map(date => {
     const rec = records.find(r => r.userId === userId && r.date === date);
     return { date, rec, m: rec ? computeMetrics(rec, schedule) : null };
   });
@@ -352,10 +353,11 @@ function EmployeeDashboard({ user, records, reload }: { user: UserProfile; recor
 
   const m = todayRec ? computeMetrics(todayRec, user.schedule) : null;
   const elapsedFmt = `${String(Math.floor(elapsed / 3600)).padStart(2, "0")}:${String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  const weekDates = getWeekDates();
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar title="My Dashboard" sub="Week of Jun 22 – Jun 28, 2026" />
+      <TopBar title="My Dashboard" sub={`Week of ${fmtWeekRange(weekDates)}`} />
       <div className="p-6 space-y-6 overflow-auto flex-1">
         <div className="rounded border border-border bg-card p-6">
           <div className="flex items-start justify-between">
@@ -397,7 +399,7 @@ function EmployeeDashboard({ user, records, reload }: { user: UserProfile; recor
           </div>
         </div>
 
-        <WeekTable userId={user.id} schedule={user.schedule} records={records} />
+        <WeekTable userId={user.id} schedule={user.schedule} records={records} weekDates={weekDates} />
       </div>
     </div>
   );
@@ -405,7 +407,8 @@ function EmployeeDashboard({ user, records, reload }: { user: UserProfile; recor
 
 // ── History ───────────────────────────────────────────────────────────────
 function HistoryView({ user, records }: { user: UserProfile; records: Punch[] }) {
-  const userRecs = records.filter(r => r.userId === user.id);
+  const weekDates = getWeekDates();
+  const userRecs = records.filter(r => r.userId === user.id && weekDates.includes(r.date));
   const totals = userRecs.reduce((acc, rec) => {
     const m = computeMetrics(rec, user.schedule);
     return { regular: acc.regular + m.regularHours, ot: acc.ot + m.otHours, nd: acc.nd + m.ndHours, late: acc.late + m.lateMinutes, under: acc.under + m.undertimeMinutes };
@@ -413,7 +416,7 @@ function HistoryView({ user, records }: { user: UserProfile; records: Punch[] })
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar title="Attendance History" sub="Full record for the week" />
+      <TopBar title="Attendance History" sub={fmtWeekRange(weekDates)} />
       <div className="p-6 space-y-5 overflow-auto flex-1">
         <div>
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Week Totals</p>
@@ -425,7 +428,7 @@ function HistoryView({ user, records }: { user: UserProfile; records: Punch[] })
             <KpiCard label="Total Undertime" value={fmtMins(totals.under)} color={totals.under > 0 ? C.orange : C.muted} />
           </div>
         </div>
-        <WeekTable userId={user.id} schedule={user.schedule} records={userRecs} title="Daily Breakdown" />
+        <WeekTable userId={user.id} schedule={user.schedule} records={userRecs} title="Daily Breakdown" weekDates={weekDates} />
       </div>
     </div>
   );
@@ -503,9 +506,10 @@ function AdminDailyReport({ users, punches }: { users: UserProfile[]; punches: P
 
 // ── Admin Weekly Report ────────────────────────────────────────────────────
 function AdminWeeklyReport({ users, punches }: { users: UserProfile[]; punches: Punch[] }) {
+  const weekDates = getWeekDates();
   const empUsers = users.filter(u => u.role === "employee");
   const rows = empUsers.map(u => {
-    const recs = punches.filter(r => r.userId === u.id && WEEK_DATES.includes(r.date));
+    const recs = punches.filter(r => r.userId === u.id && weekDates.includes(r.date));
     const totals = recs.reduce((acc, rec) => {
       const m = computeMetrics(rec, u.schedule);
       return { regular: acc.regular + m.regularHours, ot: acc.ot + m.otHours, nd: acc.nd + m.ndHours, late: acc.late + m.lateMinutes, under: acc.under + m.undertimeMinutes, days: acc.days + (rec.punchOut ? 1 : 0) };
@@ -515,7 +519,7 @@ function AdminWeeklyReport({ users, punches }: { users: UserProfile[]; punches: 
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar title="Weekly Report" sub="Jun 22 – Jun 28, 2026" />
+      <TopBar title="Weekly Report" sub={fmtWeekRange(weekDates)} />
       <div className="p-6 space-y-5 overflow-auto flex-1">
         {empUsers.length === 0 && <p className="text-sm text-muted-foreground">No employees registered yet.</p>}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -546,7 +550,7 @@ function AdminWeeklyReport({ users, punches }: { users: UserProfile[]; punches: 
         {rows.map(({ user }) => (
           <div key={user.id}>
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">{user.name}</p>
-            <WeekTable userId={user.id} schedule={user.schedule} records={punches} />
+            <WeekTable userId={user.id} schedule={user.schedule} records={punches} weekDates={weekDates} />
           </div>
         ))}
       </div>

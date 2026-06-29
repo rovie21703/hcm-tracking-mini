@@ -19,6 +19,35 @@ export function fmtDate(d: string) {
 }
 export function todayStr() { return new Date().toISOString().split("T")[0]; }
 
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Monday–Sunday dates for the week containing `ref` (defaults to today). */
+export function getWeekDates(ref: Date = new Date()): string[] {
+  const d = new Date(ref);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0 = Sun … 6 = Sat
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + mondayOffset);
+  return Array.from({ length: 7 }, (_, i) => {
+    const cur = new Date(d);
+    cur.setDate(d.getDate() + i);
+    return localDateStr(cur);
+  });
+}
+
+export function fmtWeekRange(dates: string[]): string {
+  const start = new Date(dates[0] + "T00:00:00");
+  const end = new Date(dates[dates.length - 1] + "T00:00:00");
+  const startFmt = start.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const endFmt = end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return `${startFmt} – ${endFmt}`;
+}
+
 // Minutes of work that fall in the night-differential window (22:00–06:00).
 function ndMins(startM: number, endM: number): number {
   let nd = 0;

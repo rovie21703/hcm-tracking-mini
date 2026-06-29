@@ -1,0 +1,92 @@
+# ─── Dependencies ───────────────────────────────────────────────────────────
+node_modules/
+server/node_modules/
+.pnpm-store/
+
+# ─── Build & cache ──────────────────────────────────────────────────────────
+dist/
+build/
+.vite/
+*.tsbuildinfo
+.turbo/
+.parcel-cache/
+
+# ─── Secrets & credentials (never commit) ───────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Firebase Admin SDK — private key; use serviceAccountKey.json.example as template
+server/serviceAccountKey.json
+**/serviceAccountKey.json
+**/*-firebase-adminsdk-*.json
+**/firebase-adminsdk*.json
+
+# Generic key / cert files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials.json
+*-credentials.json
+secrets/
+.secrets/
+*.secret
+
+# ─── Firebase local tooling ─────────────────────────────────────────────────
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+storage-debug.log
+
+# ─── Deployment platforms ───────────────────────────────────────────────────
+.vercel/
+.netlify/
+.railway/
+.render/
+
+# ─── Logs & diagnostics ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ─── Test & coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── OS & editor ────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Cursor local state (keep .cursor/rules if you add project rules later)
+.cursor/
+
+# ─── Misc local overrides ───────────────────────────────────────────────────
+*.local
+.cache/
+tmp/
+temp/
+.temp/
